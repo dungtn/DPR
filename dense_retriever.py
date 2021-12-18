@@ -8,16 +8,18 @@
 """
  Command line tool to get dense results and validate them
 """
-
+import os
 import glob
 import json
 import logging
 import pickle
 import time
+from tqdm import tqdm
 from typing import List, Tuple, Dict, Iterator
 
 import hydra
 import numpy as np
+import multiprocessing as mp
 import torch
 from omegaconf import DictConfig, OmegaConf
 from torch import Tensor as T
@@ -42,6 +44,19 @@ from dpr.utils.model_utils import (
 logger = logging.getLogger()
 setup_logger(logger)
 
+
+def load_pkl(fname):
+    with open(fname, "rb") as f:
+        matrix = [[t[-1] for t in pickle.load(f)]]
+        matrix = np.concatenate(matrix, 0)
+    return matrix
+
+def load_sharded_pkl(fname_pattern):
+    files = glob.glob(fname_pattern)
+    with mp.Pool(20) as pool:
+        matrix = list(tqdm(pool.imap(load_pkl, files), total=len(files), position=0))
+        matrix = np.concatenate(matrix, 0)
+    return matrix
 
 def generate_question_vectors(
     question_encoder: torch.nn.Module,
@@ -367,7 +382,14 @@ def main(cfg: DictConfig):
 
     if index_path and index.index_exists(index_path):
         logger.info("Index path: %s", index_path)
-        retriever.index.deserialize(index_path)
+        # retriever.index.deserialize(index_path)
+        if os.path.isdir(index_path):
+            meta_file = os.path.join(index_path, "index_meta.dpr")
+        else:
+            meta_file = index_path + ".index_meta.dpr"
+        retriever.index.index = load_sharded_pkl(ctx_files_patterns[0])
+        logger.info("Loaded index of type numpy.ndarray and size %d", retriever.index.index.shape[0])
+        retriever.index.index_id_to_db_id = pickle.load(open(meta_file, 'rb'))
     else:
         logger.info("Reading all passages data from files: %s", input_paths)
         retriever.index_encoded_data(input_paths, index_buffer_sz, path_id_prefixes=path_id_prefixes)
@@ -376,12 +398,11 @@ def main(cfg: DictConfig):
 
     # get top k results
     top_ids_and_scores = retriever.get_top_docs(questions_tensor.numpy(), cfg.n_docs)
-
     # we no longer need the index
     retriever = None
 
     all_passages = {}
-    for ctx_src in ctx_sources:
+    for ctx_src in tqdm(ctx_sources):
         ctx_src.load_data_to(all_passages)
 
     if len(all_passages) == 0:
