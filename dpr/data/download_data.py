@@ -155,6 +155,18 @@ RESOURCES_MAP = {
         "compressed": False,
         "desc": "WebQuestions test subset for Retriever validation and IR results generation",
     },
+    "data.retriever.qas.webq-dev": {
+        "s3_url": "https://dl.fbaipublicfiles.com/dpr/data/retriever/webquestions-test.qa.csv",
+        "original_ext": ".csv",
+        "compressed": False,
+        "desc": "WebQuestions test subset for Retriever validation and IR results generation",
+    },
+    "data.retriever.qas.webq-train": {
+        "s3_url": "https://dl.fbaipublicfiles.com/dpr/data/retriever/webquestions-test.qa.csv",
+        "original_ext": ".csv",
+        "compressed": False,
+        "desc": "WebQuestions test subset for Retriever validation and IR results generation",
+    },
     "data.retriever.qas.curatedtrec-test": {
         "s3_url": "https://dl.fbaipublicfiles.com/dpr/data/retriever/curatedtrec-test.qa.csv",
         "original_ext": ".csv",

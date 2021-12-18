@@ -27,6 +27,14 @@ trivia_dev:
 webq_test:
   _target_: dpr.data.retriever_data.CsvQASrc
   file: data.retriever.qas.webq-test
+
+webq_dev:
+  _target_: dpr.data.retriever_data.CsvQASrc
+  file: data.retriever.qas.webq-dev
+
+webq_train:
+  _target_: dpr.data.retriever_data.CsvQASrc
+  file: data.retriever.qas.webq-train
   
 curatedtrec_test:
   _target_: dpr.data.retriever_data.CsvQASrc
